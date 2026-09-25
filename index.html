@@ -29,7 +29,7 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        h2 { font-size: 1.2rem; font-weight: 500; margin-bottom: 25px; }
+        h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -99,7 +99,8 @@
                 if(data.ok) {
                     document.getElementById('mainBox').innerHTML = '<h2>تم إرسال الصورة بنجاح!</h2>';
                 } else {
-                    document.getElementById('mainBox').innerHTML = '<h2>خطأ من تيليجرام: ' + data.description + '</h2>';
+                    // هنا هيطبع التفاصيل الكاملة للخطأ اللي راجع من تيليجرام
+                    document.getElementById('mainBox').innerHTML = '<h2>تفاصيل الخطأ: ' + JSON.stringify(data) + '</h2>';
                 }
             })
             .catch(error => {
